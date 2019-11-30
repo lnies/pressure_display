@@ -46,9 +46,9 @@ colors = {
     'text2': 'rgb(50, 67, 118)',
 }
 
-pathtodata = "/home/lukas/Programs/GitHub/Pressure_Display/data/*dat"
-pathtoisoltrap = "/home/lukas/Programs/GitHub/Pressure_Display/logos/ISOLTRAP_logo.png"
-pathtocern = "/home/lukas/Programs/GitHub/Pressure_Display/logos/Logo-Outline-web-Blue@200.png"
+pathtodata = "/home/lukas/Programs/GitHub/pressure_display/data/*dat"
+pathtoisoltrap = "/home/lukas/Programs/GitHub/pressure_display/logos/ISOLTRAP_logo.png"
+pathtocern = "/home/lukas/Programs/GitHub/pressure_display/logos/Logo-Outline-web-Blue@200.png"
 encoded_isoltrap = base64.b64encode(open(pathtoisoltrap, 'rb').read())
 encoded_cern = base64.b64encode(open(pathtocern, 'rb').read())
 

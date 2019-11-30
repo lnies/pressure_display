@@ -1,4 +1,4 @@
-# pressure_monitor
-Pressure Monitor for the ISOLTRAP vaccum system.
+# Pressure Monitor
+Interactive Pressure Monitor for the ISOLTRAP vaccum system with automatic updates.
 
-![GitHub Logo](/logos/ISOLTRAP_logo.png)
+![GitHub Logo](/pressure_monitor.png)

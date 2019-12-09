@@ -5,24 +5,30 @@
 #  Written by: 
 # 	Lukas Nies <Lukas.Nies@cern.ch> 
 
-# Version 1.0
-# 30.11.2019
+# Version 1.1
+# 09.12.2019
 
 # Dependencies:
-#	- Dash: https://plot.ly/dash/
-#	- Plotly: https://plot.ly
-#	- etc (find standard libraries in header)
+#	- configparser: 'pip install configparser'
+#	- Dash: https://plot.ly/dash/ 'pip install dash==1.7.0'
+#	- Plotly: https://plot.ly 'pip install plotly==4.3.0'
+#	- Pandas: 'pip install pandas'
+# 	- Combined command: 'pip install configparser dash==1.7.0 plotly=4.3.0 pandas'
+#	- Other dependencies should be included in standard Python installation
 
 # Installation:
 # 	- Use pip to install all needed dependencies
 
 # Run:
-#	- Adjust absolute path of the pressure data
+#	- Adjust absolute path of the pressure data / HTML formatting in the config file as needed
+# 	- If you use shared folders for your data (CERN DFS for example) 
+#	  then add folder to current terminal session
+#		+ WINDOWS: 'net use X: \\dfs.cern.ch@SSL\DavWWWRoot\dfs\Experiments' etc.
 #	- Run .py file in your Python terminal
-#	- Server is opened in the background, displays software in browser of your choice
-#	- Adjust the HTML formatting if needed
+#	- Server is opened in 127.0.0.1:8050, displays software in browser of your choice
 
 import pandas as pd
+import sys
 import glob
 import plotly
 import plotly.graph_objects as go
@@ -31,11 +37,8 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import base64
+import configparser # Read-in configuration parameters
 from dash.dependencies import Input, Output, State
-
-# pip install pyorbital
-from pyorbital.orbital import Orbital
-satellite = Orbital('TERRA')
 
 external_stylesheets = ['https://codepen.io/anon/pen/mardKv.css']
 
@@ -46,11 +49,13 @@ colors = {
     'text2': 'rgb(50, 67, 118)',
 }
 
-pathtodata = "/home/lukas/Programs/GitHub/pressure_display/data/*dat"
-pathtoisoltrap = "/home/lukas/Programs/GitHub/pressure_display/logos/ISOLTRAP_logo.png"
-pathtocern = "/home/lukas/Programs/GitHub/pressure_display/logos/Logo-Outline-web-Blue@200.png"
-encoded_isoltrap = base64.b64encode(open(pathtoisoltrap, 'rb').read())
-encoded_cern = base64.b64encode(open(pathtocern, 'rb').read())
+# Configuration read in from configfile "config.ini", placed in same folder as .py executable
+config = configparser.ConfigParser()
+config.sections()
+config.read('config.ini')
+
+encoded_isoltrap = base64.b64encode(open(config['PATH']['isoltrap'], 'rb').read())
+encoded_cern = base64.b64encode(open(config['PATH']['cern'], 'rb').read())
 
 cnames = ['VI','Datetime', 'Time', 'Alkali', 'Alkali_status', 'ISOLDE/Buncher', 'ISOLDE/Buncher_status',
           'Buncher/Isep1', 'Buncher/Isep1_status', 'Buncher/Isep2', 'Buncher/Isep2_status', 
@@ -111,7 +116,7 @@ app.layout = html.Div(style={'backgroundColor': colors['background']}, children=
         dcc.Graph(id='live-update-graph'),
         dcc.Interval(
             id='interval-component',
-            interval=60*1000, # in milliseconds
+            interval=300*1000, # in milliseconds
             n_intervals=0
         )
     ])
@@ -119,7 +124,7 @@ app.layout = html.Div(style={'backgroundColor': colors['background']}, children=
 @app.callback(Output('live-update-graph', 'figure'), 
     [Input('interval-component', 'n_intervals')], [State('live-update-graph', 'figure')])
 def update_graph_live(n, existing):
-    df = load_data(path=pathtodata, n_files=10)
+    df = load_data(path=config['PATH']['data'], n_files=10)
     # Create the graph with subplots
     fig = plotly.subplots.make_subplots(rows=2, cols=1, vertical_spacing=0.05)
     fig['layout']['margin'] = {
@@ -131,7 +136,7 @@ def update_graph_live(n, existing):
             y=df[pump],
             mode="lines",
             name=pump,
-            legendgroup="UHV",
+            # legendgroup="UHV",
             line=dict(width=3),
         ), 1, 1)
     for pump in pre_pumps:
@@ -140,7 +145,7 @@ def update_graph_live(n, existing):
             y=df[pump],
             mode="lines",
             name=pump,
-            legendgroup="PRE",
+            # legendgroup="PRE",
             line=dict(width=3),
         ), 2, 1)
     fig['layout']['yaxis1'].update(title='Pressure [mbar]', type='log')
@@ -164,7 +169,8 @@ def update_graph_live(n, existing):
         )
     )
     fig.update_layout(
-        height=750, width=1600,
+        height=int(config['PLOT']['height']), 
+        width=int(config['PLOT']['width']),
         plot_bgcolor= colors['plot_background'],
         paper_bgcolor= colors['background'],
         font = {
@@ -194,9 +200,8 @@ def load_data(path, n_files):
     data_list.sort(key = lambda x: x.split("/")[-1])
     # Only take the latest n_files for the data
     data_list = data_list[-n_files:]
-    
     if (len(data_list) < 1):
-        return 0
+		  	print("WARNING: Data is empty or path to data is corrupted!")
     i = 0
     for filename in data_list:
         if i == 0:
